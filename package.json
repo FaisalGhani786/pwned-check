@@ -1,0 +1,9 @@
+{
+  "name": "pwned-check",
+  "version": "1.0.0",
+  "description": "Check if a password has appeared in a data breach without ever sending the password, using k-anonymity and the Have I Been Pwned API.",
+  "type": "module",
+  "scripts": { "test": "node --test test/*.test.js" },
+  "author": "Faisal Ghani",
+  "license": "MIT"
+}

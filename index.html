@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pwned Check · Breached Password Checker</title>
+<meta name="description" content="Check if a password has appeared in a data breach without ever sending it. Uses k-anonymity and the Have I Been Pwned API.">
+<meta property="og:title" content="Pwned Check">
+<meta property="og:description" content="See if a password has been in a data breach, without it ever leaving your device.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect x='10' y='28' width='44' height='30' rx='6' fill='%234CC384'/%3E%3Cpath d='M20 28v-8a12 12 0 0 1 24 0v8' fill='none' stroke='%234CC384' stroke-width='6'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..900&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: one centred tool column; the hash "split" diagram is the hero moment */
+:root{
+  --bg:#0B0E13; --surface:#131820; --raise:#1A212B; --ink:#E9EDF2; --muted:#8E9AA8; --line:#26303C;
+  --accent:#FFD200; --accent-ink:#111; --good:#4CC384; --good-soft:#12301F; --bad:#FF7A6B; --bad-soft:#3A1915; --warn:#F5A524;
+  --display:"Archivo",system-ui,sans-serif; --body:"Figtree",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--body);min-height:100vh;
+  background-image:radial-gradient(var(--raise) 1.1px,transparent 1.1px);background-size:22px 22px}
+.wrap{max-width:760px;margin:0 auto;padding:48px max(16px,env(safe-area-inset-right,0px)) 64px max(16px,env(safe-area-inset-left,0px))}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+a{color:#8FA8FF}
+.eyebrow{font:700 12px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+h1{font:900 clamp(40px,8vw,68px)/1 var(--display);font-stretch:115%;letter-spacing:-.02em;margin:14px 0 14px;text-wrap:balance}
+h1 span{color:var(--good)}
+.lede{color:#B7C1CD;font-size:18px;max-width:36em;margin:0}
+
+.tool{margin-top:32px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 30px 80px -40px #000}
+.field{display:flex;gap:10px;flex-wrap:wrap}
+.input{flex:1 1 280px;display:flex;align-items:center;background:var(--bg);border:1.5px solid var(--line);border-radius:10px;min-width:0}
+.input:focus-within{border-color:var(--accent)}
+.input input{flex:1;min-width:0;background:none;border:0;color:var(--ink);font:500 17px var(--mono);padding:14px}
+.input input:focus{outline:none}
+.toggle{background:none;border:0;color:var(--muted);font:600 13px var(--body);padding:0 14px;cursor:pointer}
+.check{background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;font:800 16px var(--display);font-stretch:105%;padding:0 26px;min-height:52px;cursor:pointer}
+.check:disabled{opacity:.6;cursor:progress}
+
+.meter{margin-top:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.meter i{height:6px;border-radius:3px;background:var(--raise);transition:background .3s}
+.meter-row{display:flex;justify-content:space-between;gap:12px;margin-top:8px;font-size:14px;color:var(--muted)}
+.meter-row b{color:var(--ink);font-weight:600}
+.tips{margin:8px 0 0;padding-left:18px;color:var(--muted);font-size:14px}
+
+/* the split diagram */
+.split{margin-top:20px;border-top:1px solid var(--line);padding-top:18px;display:grid;gap:14px}
+.hash{font:700 clamp(12px,2.6vw,16px)/1.4 var(--mono);letter-spacing:.06em;word-break:break-all;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 14px;min-height:48px}
+.hash .p{color:var(--accent-ink);background:var(--accent);border-radius:4px;padding:0 3px}
+.hash .s{color:var(--muted)}
+.hash .ph{color:var(--line)}
+.lanes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:520px){.lanes{grid-template-columns:1fr}}
+.lane{border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:grid;gap:4px;background:var(--bg);min-width:0}
+.lane b{font:700 22px var(--mono);letter-spacing:.06em;word-break:break-all}
+.lane.sent b{color:var(--accent)}
+.lane.kept b{color:var(--good);font-size:14px}
+.lane small{color:var(--muted);font-size:13px}
+.lane.flash{animation:flash .9s ease-out}
+@keyframes flash{0%{box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 45%,transparent)}100%{box-shadow:0 0 0 0 transparent}}
+
+.result{margin-top:18px;border-radius:12px;padding:18px;display:grid;gap:6px;border:1px solid var(--line);background:var(--raise)}
+.result.bad{background:var(--bad-soft);border-color:color-mix(in srgb,var(--bad) 45%,transparent)}
+.result.good{background:var(--good-soft);border-color:color-mix(in srgb,var(--good) 45%,transparent)}
+.result h2{margin:0;font:850 clamp(22px,4.5vw,30px)/1.15 var(--display);font-stretch:108%}
+.result.bad h2{color:var(--bad)} .result.good h2{color:var(--good)}
+.result p{margin:0;color:#C5CDD7}
+.result .num{font-variant-numeric:tabular-nums}
+
+.how{margin-top:40px;display:grid;gap:14px}
+.how h3{font:800 24px var(--display);font-stretch:108%;margin:0}
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:10px;counter-reset:s}
+.steps li{display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:start;color:#C5CDD7}
+.steps li::before{counter-increment:s;content:counter(s);display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--raise);border:1px solid var(--line);font:700 14px var(--mono);color:var(--accent)}
+.steps code,.how code{font:500 14px var(--mono);background:var(--raise);padding:1px 6px;border-radius:4px;color:var(--ink)}
+footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:14px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<main class="wrap">
+  <span class="eyebrow">Cybersecurity tool · k-anonymity</span>
+  <h1>Has your password been <span>leaked?</span></h1>
+  <p class="lede">Check a password against hundreds of millions of passwords exposed in real data breaches. Your password never leaves this page. Only the first 5 characters of its hash are sent.</p>
+
+  <section class="tool" aria-label="Password checker">
+    <form id="form" class="field" autocomplete="off">
+      <label class="sr" for="pw">Password to check</label>
+      <div class="input">
+        <input id="pw" type="password" placeholder="Type a password" spellcheck="false" autocapitalize="off">
+        <button class="toggle" id="toggle" type="button" aria-pressed="false">Show</button>
+      </div>
+      <button class="check" id="go" type="submit">Check</button>
+    </form>
+
+    <div class="meter" id="meter" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <div class="meter-row"><span>Strength: <b id="sLabel">Empty</b></span><span id="sBits">0 bits</span></div>
+    <ul class="tips" id="tips"></ul>
+
+    <div class="split" aria-label="What gets sent">
+      <span class="eyebrow">SHA-1 hash of your password</span>
+      <div class="hash" id="hash"><span class="ph">0000000000000000000000000000000000000000</span></div>
+      <div class="lanes">
+        <div class="lane sent" id="laneSent"><span class="eyebrow">Sent to the API</span><b id="prefix">-----</b><small>5 characters, shared by hundreds of other passwords</small></div>
+        <div class="lane kept"><span class="eyebrow">Kept on your device</span><b id="suffix">-----------------------------------</b><small>Compared locally against the results</small></div>
+      </div>
+    </div>
+
+    <div class="result" id="result" aria-live="polite">
+      <h2>Ready when you are</h2>
+      <p>Try <code>password123</code> to see what a breached password looks like.</p>
+    </div>
+  </section>
+
+  <section class="how">
+    <h3>How it stays private</h3>
+    <ol class="steps">
+      <li><div>Your browser hashes the password with <code>SHA-1</code> using the built-in Web Crypto API.</div></li>
+      <li><div>Only the first 5 characters of the hash go to the <a href="https://haveibeenpwned.com/Passwords">Have I Been Pwned</a> API. Hundreds of different passwords share every prefix, so the API can't tell which one you typed.</div></li>
+      <li><div>The API returns every leaked hash suffix that starts with those 5 characters, padded with fake rows so even the response size reveals nothing.</div></li>
+      <li><div>Your browser looks for the remaining 35 characters in that list. The match happens here, on your device.</div></li>
+    </ol>
+    <p style="color:var(--muted);margin:0">This technique is called <strong style="color:var(--ink)">k-anonymity</strong>. It's the same method used by password managers and browsers to warn you about leaked passwords. The <a href="https://github.com/FaisalGhani786/pwned-check">source code</a> is public so you can check it yourself.</p>
+  </section>
+
+  <footer><span>Built by <a href="https://faisalghani786.github.io">Faisal Ghani</a></span><span>Data: <a href="https://haveibeenpwned.com/">Have I Been Pwned</a></span></footer>
+</main>
+<script type="module" src="app.js"></script>
+</body>
+</html>
