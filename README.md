@@ -67,4 +67,4 @@ Breach data from [Have I Been Pwned](https://haveibeenpwned.com/) by Troy Hunt (
 
 ---
 
-Built by [Faisal Ghani](https://faisalghani786.github.io) · [LinkedIn](https://www.linkedin.com/in/fa1salg/)
+Built by [Faisal Ghani](https://faisalghani786.github.io) as a security awareness tool for [CyberPro Solutions](https://www.cyberprosolutions.co.uk/) · [LinkedIn](https://www.linkedin.com/in/fa1salg/)
