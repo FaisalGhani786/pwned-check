@@ -77,12 +77,15 @@ h1 span{color:var(--good)}
 .steps li::before{counter-increment:s;content:counter(s);display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--raise);border:1px solid var(--line);font:700 14px var(--mono);color:var(--accent)}
 .steps code,.how code{font:500 14px var(--mono);background:var(--raise);padding:1px 6px;border-radius:4px;color:var(--ink)}
 footer{margin-top:48px;padding-top:18px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:14px}
+.back{display:inline-block;margin-bottom:28px;font:600 14px var(--body);color:var(--muted);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 14px;background:var(--surface)}
+.back:hover{color:var(--ink);border-color:var(--muted)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 <main class="wrap">
+  <a class="back" href="https://faisalghani786.github.io/#projects">← Faisal Ghani · All projects</a>
   <span class="eyebrow">Cybersecurity tool · k-anonymity</span>
   <h1>Has your password been <span>leaked?</span></h1>
   <p class="lede">Check a password against hundreds of millions of passwords exposed in real data breaches. Your password never leaves this page. Only the first 5 characters of its hash are sent.</p>
