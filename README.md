@@ -35,6 +35,7 @@ The password and full hash never leave the page. The test suite checks this.
 - Live strength meter that explains *why* a password is weak (common words, sequences, short length)
 - A visual breakdown of exactly what is sent and what stays on your device
 - No dependencies, no build step, no tracking
+- Deployed by GitHub Actions only after every test passes
 
 ## Project structure
 
